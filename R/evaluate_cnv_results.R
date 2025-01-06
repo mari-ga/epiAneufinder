@@ -85,25 +85,26 @@ plot_karyo_annotated<-function(res_table, plot_path, annot_dt=NULL,
     dhc <- stats::as.dendrogram(hc_counts)
     ddata <- ggdendro::dendro_data(dhc)
     ggdndr <- ggplot(ddata$segments) + 
-      geom_segment(aes(x=x, xend=xend, y=y, yend=yend)) + 
-      scale_y_reverse()
-    ggdndr <- ggdndr + coord_flip() + labs(title = "", subtitle = "")
-    ggdndr <- ggdndr + theme(panel.background=element_blank(), 
-                             axis.ticks=element_blank(), 
-                             axis.text=element_blank(), 
-                             axis.line=element_blank(), 
-                             axis.title=element_blank(),
-                             panel.grid.minor=element_blank(),
-                             plot.title = element_text(size=18),
-                             plot.subtitle=element_text(size=12))
-    
+      geom_segment(aes(x = x, xend = xend, y = y, yend = yend)) + 
+      scale_y_reverse() +
+      coord_flip() +
+      labs(title = "", subtitle = "") +
+      theme(panel.background = element_blank(), 
+            axis.ticks = element_blank(), 
+            axis.text = element_blank(), 
+            axis.line = element_blank(), 
+            axis.title = element_blank(),
+            panel.grid.minor = element_blank(),
+            plot.title = element_text(size = 18),
+            plot.subtitle = element_text(size = 12))
+
     #Make sure the karyogram is ordered according to the dendogram
     somies_melted$variable <- factor(somies_melted$variable,
                                      levels = rownames(counts_t)[ord])
     
     #Also order the cell type annotations accordingly
     if(!is.null(annot_dt)){
-      annot_dt$cell<-factor(as.character(annot_dt$cell),
+      annot_dt$cell <- factor(as.character(annot_dt$cell),
                             levels=rownames(counts_t)[ord])
       
     }
@@ -111,7 +112,8 @@ plot_karyo_annotated<-function(res_table, plot_path, annot_dt=NULL,
   somycolours <- c(`0-somy` = "darkorchid3",
                    `1-somy` = "springgreen2",
                    `2-somy` = "red3")
-  
+
+  # Create the karyogram heatmap
   ggsomy <- ggplot(somies_melted, aes(x=rn, y=variable, fill=value)) + 
     geom_tile() +
     facet_grid(cols=vars(seq), scales = 'free_x', space = 'free') +
@@ -124,10 +126,61 @@ plot_karyo_annotated<-function(res_table, plot_path, annot_dt=NULL,
           strip.text.x = element_text(size = 12),
           axis.title.y = element_blank(),
           axis.text.y = element_blank())
+  #Load and plot DICE phylogenetic tree if available
+  if (!is.null(dice_tree_path)) {
+    library(ape)
+    library(ggtree)
+    
+    dice_tree <- read.tree(dice_tree_path)
+    ggtree_plot <- ggtree(dice_tree) + 
+                   theme_tree() +
+                   labs(title="DICE Phylogenetic Tree")
   
-  if(nrow(counts_t)>1) {
-    if(is.null(annot_dt)){
-      combiplot <- cowplot::plot_grid(ggdndr, ggsomy, ncol = 2, 
+    # Combine plots: dendrogram (if exists), karyogram, and DICE tree
+    if(nrow(counts_t)>1) {
+      if(is.null(annot_dt)){
+        combiplot <- cowplot::plot_grid(ggdndr, ggsomy,ggtree_plot, ncol = 3, 
+                                        rel_widths = c(0.1,1,0.3), axis='b', align = 'h')
+        ggsave(plot_path, combiplot, width = 36, height=20, units = "in")
+      } else {
+        
+        annot_dt$type<-"Annotation"
+        ggannot<-ggplot(annot_dt,aes(x=cell,y=1,fill=annot))+
+          geom_tile()+
+          coord_flip()+
+          facet_grid(~type, scales = 'free', space = 'free') +
+          labs(title = "",fill="Annotation")+
+          theme(legend.title=element_text(size=16),
+                legend.text=element_text(size=16),
+                plot.title = element_text(size=18))+
+          guides(fill=guide_legend(nrow=1,byrow=TRUE))
+        
+        gglegend<-cowplot::get_legend(ggannot)
+
+        ggannot <- ggannot + theme(axis.title.y=element_blank(),
+                                    axis.ticks=element_blank(),
+                                    axis.text=element_blank(),
+                                    legend.position="none")
+        
+        combiplot <- cowplot::plot_grid(ggdndr, ggsomy, ggannot, ggtree_plot, ncol = 4, 
+                                        rel_widths = c(0.1,1,0.03,0.3), 
+                                        axis='b', align = 'hw')
+        combiplot <- cowplot::plot_grid(combiplot,gglegend,ncol=1,
+                                        rel_heights=c(1,0.05))
+        
+        ggsave(plot_path, combiplot, width = 42, height=20, units = "in")
+      }
+    } else {
+      combiplot <- cowplot::plot_grid(ggsomy, ggtree_plot,
+                                        ncol=2,
+                                        rel_widths=c(1,0.3), 
+                                        axis='b', align='h')
+      ggsave(plot_path, combiplot, width=36, height=20, units="in")
+    }
+  }else { # If no DICE tree is provided
+    if (nrow(counts_t) > 1) {
+      if (is.null(annot_dt)) {
+        combiplot <- cowplot::plot_grid(ggdndr, ggsomy, ncol = 2, 
                                       rel_widths = c(0.1,1), axis='b', align = 'h')
       ggsave(plot_path, combiplot, width = 36, height=20, units = "in")
     } else {
@@ -160,12 +213,11 @@ plot_karyo_annotated<-function(res_table, plot_path, annot_dt=NULL,
       
       ggsave(plot_path, combiplot, width = 38, height=20, units = "in")
     }
-    
-  } else {
-    ggsave(plot_path, ggsomy, width = 30, height=20, units = "in")
+    } else {
+      ggsave(plot_path, ggsomy, width = 30, height=20, units = "in")
+    }
   }
 }
-
 #' Split cells into different subclones based on hierarchical clustering of the CNV profiles
 #' 
 #' @param outdir Directory created by the epiAneufinder main function with required
