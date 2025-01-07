@@ -63,7 +63,7 @@ split_subclones<-function(res_table,tree_depth,plot_tree=TRUE,
 #' @import cowplot
 #' @export
 plot_karyo_annotated<-function(res_table, plot_path, annot_dt=NULL, 
-                               title_karyo=""){
+                               title_karyo="",dice_tree_path = NULL){
 
   #Reformat somy dataframe
   res_table<-as.data.table(res_table)
