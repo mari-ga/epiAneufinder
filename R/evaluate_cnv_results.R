@@ -63,7 +63,7 @@ split_subclones<-function(res_table,tree_depth,plot_tree=TRUE,
 #' @import cowplot
 #' @export
 plot_karyo_annotated<-function(res_table, plot_path, annot_dt=NULL, 
-                               title_karyo="",dice_tree_path = NULL){
+                               title_karyo="",dice_tree_path = NULL,mt_subclone_data = NULL){
 
   #Reformat somy dataframe
   res_table<-as.data.table(res_table)
@@ -94,6 +94,10 @@ plot_karyo_annotated<-function(res_table, plot_path, annot_dt=NULL,
       annot_dt$cell <- factor(as.character(annot_dt$cell),
                               levels = dice_tree$tip.label)
     }
+  if (!is.null(mt_subclone_data)) {
+      mt_subclone_data$cell <- factor(mt_subclone_data$cell,
+                                      levels = dice_tree$tip.label)
+    }
   } else {
     stop("DICE tree path must be provided to replace the original hierarchical clustering.")
   }
@@ -117,40 +121,61 @@ plot_karyo_annotated<-function(res_table, plot_path, annot_dt=NULL,
           axis.title.y = element_blank(),
           axis.text.y = element_blank())
 
-  #Load and plot DICE phylogenetic tree if available
-  # Combine plots: DICE tree and karyogram
-  if (is.null(annot_dt)) {
-    combiplot <- cowplot::plot_grid(ggtree_plot, ggsomy,
-                                    ncol=2, rel_widths=c(0.3,1), 
+
+# Create mitochondrial subclone heatmap (if provided)
+  if (!is.null(mt_subclone_data)) {
+    ggmito <- ggplot(mt_subclone_data, aes(x=variant, y=cell, fill=freq)) +
+              geom_tile() +
+              scale_fill_viridis_c(option="plasma") +
+              labs(x="Mitochondrial Variant", y="", fill="Allele Freq") +
+              theme(axis.text.x=element_text(angle=90, hjust=1),
+                    axis.title.y=element_blank(),
+                    axis.ticks.y=element_blank(),
+                    axis.text.y=element_blank(),
+                    legend.position="right")
+  }
+  
+  # Combine plots: DICE tree, karyogram, and mt-subclones
+  if (is.null(annot_dt) && !is.null(mt_subclone_data)) {
+    combiplot <- cowplot::plot_grid(ggtree_plot, ggsomy, ggmito,
+                                    ncol=3,
+                                    rel_widths=c(0.3,1,0.5), 
                                     axis='b', align='h')
-    ggsave(plot_path, combiplot, width=40, height=20, units="in")
-  } else {
+    ggsave(plot_path, combiplot, width=50, height=20, units="in")
+  } else if (!is.null(annot_dt) && !is.null(mt_subclone_data)) {
     annot_dt$type <- "Annotation"
     ggannot <- ggplot(annot_dt, aes(x=cell, y=1, fill=annot)) +
-              geom_tile() +
-              coord_flip() +
-              facet_grid(~type, scales='free', space='free') +
-              labs(title="", fill="Annotation") +
-              theme(legend.title=element_text(size=16),
-                    legend.text=element_text(size=16),
-                    plot.title=element_text(size=18)) +
-              guides(fill=guide_legend(nrow=1, byrow=TRUE))
-
+               geom_tile() +
+               coord_flip() +
+               facet_grid(~type, scales='free', space='free') +
+               labs(title="", fill="Annotation") +
+               theme(legend.title=element_text(size=16),
+                     legend.text=element_text(size=16),
+                     plot.title=element_text(size=18)) +
+               guides(fill=guide_legend(nrow=1, byrow=TRUE))
+    
     gglegend <- cowplot::get_legend(ggannot)
     ggannot <- ggannot + theme(axis.title.y=element_blank(),
-                              axis.ticks=element_blank(),
-                              axis.text=element_blank(),
-                              legend.position="none")
-
-    combiplot <- cowplot::plot_grid(ggtree_plot, ggsomy, ggannot,
-                                    ncol=3,
-                                    rel_widths=c(0.3,1,0.03), 
+                               axis.ticks=element_blank(),
+                               axis.text=element_blank(),
+                               legend.position="none")
+    
+    combiplot <- cowplot::plot_grid(ggtree_plot, ggsomy, ggmito,
+                                    ggannot,
+                                    ncol=4,
+                                    rel_widths=c(0.3,1,0.5,0.03), 
                                     axis='b', align='hw')
     combiplot <- cowplot::plot_grid(combiplot, gglegend,
                                     ncol=1,
                                     rel_heights=c(1,0.05))
-
-    ggsave(plot_path, combiplot, width=42, height=20, units="in")
+    
+    ggsave(plot_path, combiplot, width=55, height=20, units="in")
+  } else {
+    combiplot <- cowplot::plot_grid(ggtree_plot, ggsomy,
+                                    ncol=2,
+                                    rel_widths=c(0.3,1), 
+                                    axis='b', align='h')
+    ggsave(plot_path, combiplot, width=40, height=20, units="in")
   }
 }
 #' Split cells into different subclones based on hierarchical clustering of the CNV profiles
