@@ -90,9 +90,9 @@ plot_karyo_annotated<-function(res_table, plot_path, annot_dt=NULL,
     somies_melted$variable <- factor(somies_melted$variable,
                                     levels = dice_tree$tip.label)
 
-  if (!is.null(annot_csv)) {
+  if (!is.null(annot_dt)) {
       # Load annotation data
-      annot_dt <- fread(annot_csv)
+      annot_dt <- fread(annot_dt)
       
       # Reorder annotations based on DICE tree tip labels
       annot_dt$Cell <- factor(annot_dt$Cell, levels = dice_tree$tip.label)
