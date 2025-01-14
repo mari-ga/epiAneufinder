@@ -91,19 +91,17 @@ plot_karyo_annotated <- function(res_table, plot_path, annot_dt = NULL,
                                      levels = dice_tree$tip.label)
     
     if (!is.null(annot_dt)) {
-      #check number of cols
+      # Check if annot_dt is a data frame with at least two columns
       if (!is.data.frame(annot_dt) || ncol(annot_dt) < 2) {
         stop("Error: Annotation data must be a data frame with at least two columns.")
       }
-      # Dynamically map columns to standard names, all cols to lowercase
-      colnames(annot_dt) <- tolower(colnames(annot_dt))
-      setnames(annot_dt, old = colnames(annot_dt)[1:2], new = c("Cell", "annotation"))
+      
+      # Dynamically map columns to standard names
+      colnames(annot_dt) <- c("cell", "annot")
       
       # Reorder annotations based on DICE tree tip labels
-      annot_dt <- annot_dt[match(dice_tree$tip.label, annot_dt$Cell), ]
-      
-      # Ensure no missing rows after reordering
-      annot_dt <- na.omit(annot_dt)
+      annot_dt$cell <- factor(as.character(annot_dt$cell),
+                              levels = dice_tree$tip.label)
     }
   } else {
     stop("DICE tree path must be provided to replace the original hierarchical clustering.")
@@ -128,51 +126,49 @@ plot_karyo_annotated <- function(res_table, plot_path, annot_dt = NULL,
           axis.title.y=element_blank(),
           axis.text.y=element_blank())
   
-  # Create annotation heatmap (if provided)
   if (!is.null(annot_dt)) {
-    ggannot <- ggplot(annot_dt, aes(x=annotation, y=Cell, fill=annotation)) +
-              geom_tile() +
-              scale_fill_manual(values=c("Clone1"="red", "Clone2"="blue", 
-                                          "Clone3"="purple", "Clone4"="green")) +
-              coord_flip() +
-              labs(title="", fill="Annotation") +
-              theme(axis.title.y=element_blank(),
-                    axis.ticks.y=element_blank(),
-                    axis.text.y=element_blank(),
-                    legend.position="right",
-                    plot.title=element_text(size=18))
+    annot_dt$type <- "Annotation"
     
-    # Extract legend for annotation heatmap
+    # Create annotation heatmap
+    ggannot <- ggplot(annot_dt, aes(x=cell, y=1, fill=annot)) +
+              geom_tile() +
+              coord_flip() +
+              facet_grid(~type, scales='free', space='free') +
+              labs(title="", fill="Annotation") +
+              theme(legend.title=element_text(size=16),
+                    legend.text=element_text(size=16),
+                    plot.title=element_text(size=18)) +
+              guides(fill=guide_legend(nrow=1, byrow=TRUE))
+    
     gglegend <- cowplot::get_legend(ggannot)
     
-    # Remove legend from main annotation plot
     ggannot <- ggannot +
+              ylab("") +
               theme(axis.title.y=element_blank(),
                     axis.ticks=element_blank(),
                     axis.text=element_blank(),
                     legend.position="none")
     
     # Combine plots: DICE tree, karyogram, and annotations
-    combiplot <- cowplot::plot_grid(ggtree_plot, ggsomy, ggannot,
+    combiplot <- cowplot::plot_grid(ggtree_plot, ggsomy, ggannot, 
                                     ncol=3,
-                                    rel_widths=c(0.3,1,0.2), 
+                                    rel_widths=c(0.1,1,0.03), 
                                     axis='b', align='hw')
     
-    # Add legend below combined plot
     combiplot <- cowplot::plot_grid(combiplot, gglegend,
                                     ncol=1,
                                     rel_heights=c(1,0.05))
     
-    ggsave(plot_path, combiplot, width=42, height=20, units="in")
+    ggsave(plot_path, combiplot, width=38, height=20, units="in")
     
   } else {
     # Combine only DICE tree and karyogram if no annotations are provided
     combiplot <- cowplot::plot_grid(ggtree_plot, ggsomy,
                                     ncol=2,
-                                    rel_widths=c(0.3,1), 
+                                    rel_widths=c(0.1,1), 
                                     axis='b', align='h')
     
-    ggsave(plot_path, combiplot, width=40, height=20, units="in")
+    ggsave(plot_path, combiplot, width=36, height=20, units="in")
   }
 }
 
