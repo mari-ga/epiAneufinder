@@ -91,13 +91,16 @@ plot_karyo_annotated <- function(res_table, plot_path, annot_dt = NULL,
                                      levels = dice_tree$tip.label)
     
     if (!is.null(annot_dt)) {
-      # Dynamically map columns to standard names if necessary
-      colnames(annot_dt) <- tolower(colnames(annot_dt))  # Convert all column names to lowercase
-      if ("cell" %in% colnames(annot_dt) && length(colnames(annot_dt)) == 2) {
-        setnames(annot_dt, old = c("cell", colnames(annot_dt)[2]), new = c("Cell", "annotation"))
-      } else {
-        stop("Error: Annotation data must contain a 'cell' column and one additional annotation column.")
+      #check number of cols
+      if (!is.data.frame(annot_dt) || ncol(annot_dt) < 2) {
+        stop("Error: Annotation data must be a data frame with at least two columns.")
       }
+      # Dynamically map columns to standard names if necessary, all cols names to lowercase
+      colnames(annot_dt) <- tolower(colnames(annot_dt))
+      setnames(annot_dt, old = colnames(annot_dt)[1:2], new = c("Cell", "annotation"))
+      
+      # Convert annotation column to numeric for visualization
+      annot_dt$annotation_numeric <- as.numeric(as.factor(annot_dt$annotation))
       
       # Reorder annotations based on DICE tree tip labels
       annot_dt$Cell <- factor(as.character(annot_dt$Cell),
