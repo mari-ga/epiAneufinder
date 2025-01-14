@@ -83,8 +83,8 @@ plot_karyo_annotated <- function(res_table, plot_path, annot_dt = NULL,
     # Read the DICE tree from the Newick file
     dice_tree <- read.tree(dice_tree_path)
     ggtree_plot <- ggtree(dice_tree) + 
-                   theme_tree() +
-                   labs(title="Phylogenetic Tree from DICE")
+                  theme_tree() +
+                  labs(title="Phylogenetic Tree from DICE")
     
     # Reorder cells in karyogram based on DICE tree tip labels
     somies_melted$variable <- factor(somies_melted$variable,
@@ -98,9 +98,6 @@ plot_karyo_annotated <- function(res_table, plot_path, annot_dt = NULL,
       # Dynamically map columns to standard names, all cols to lowercase
       colnames(annot_dt) <- tolower(colnames(annot_dt))
       setnames(annot_dt, old = colnames(annot_dt)[1:2], new = c("Cell", "annotation"))
-      
-      # Convert annotation column to numeric for visualization
-      annot_dt$annotation_numeric <- as.numeric(as.factor(annot_dt$annotation))
       
       # Reorder annotations based on DICE tree tip labels
       annot_dt <- annot_dt[match(dice_tree$tip.label, annot_dt$Cell), ]
@@ -133,8 +130,10 @@ plot_karyo_annotated <- function(res_table, plot_path, annot_dt = NULL,
   
   # Create annotation heatmap (if provided)
   if (!is.null(annot_dt)) {
-    ggannot <- ggplot(annot_dt, aes(x=1, y=Cell, fill=annotation)) +
+    ggannot <- ggplot(annot_dt, aes(x=annotation, y=Cell, fill=annotation)) +
               geom_tile() +
+              scale_fill_manual(values=c("Clone1"="red", "Clone2"="blue", 
+                                          "Clone3"="purple", "Clone4"="green")) +
               coord_flip() +
               labs(title="", fill="Annotation") +
               theme(axis.title.y=element_blank(),
