@@ -95,7 +95,7 @@ plot_karyo_annotated <- function(res_table, plot_path, annot_dt = NULL,
       if (!is.data.frame(annot_dt) || ncol(annot_dt) < 2) {
         stop("Error: Annotation data must be a data frame with at least two columns.")
       }
-      # Dynamically map columns to standard names if necessary, all cols names to lowercase
+      # Dynamically map columns to standard names, all cols to lowercase
       colnames(annot_dt) <- tolower(colnames(annot_dt))
       setnames(annot_dt, old = colnames(annot_dt)[1:2], new = c("Cell", "annotation"))
       
@@ -103,8 +103,10 @@ plot_karyo_annotated <- function(res_table, plot_path, annot_dt = NULL,
       annot_dt$annotation_numeric <- as.numeric(as.factor(annot_dt$annotation))
       
       # Reorder annotations based on DICE tree tip labels
-      annot_dt$Cell <- factor(as.character(annot_dt$Cell),
-                              levels = dice_tree$tip.label)
+      annot_dt <- annot_dt[match(dice_tree$tip.label, annot_dt$Cell), ]
+      
+      # Ensure no missing rows after reordering
+      annot_dt <- na.omit(annot_dt)
     }
   } else {
     stop("DICE tree path must be provided to replace the original hierarchical clustering.")
