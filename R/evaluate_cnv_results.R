@@ -63,7 +63,7 @@ split_subclones<-function(res_table,tree_depth,plot_tree=TRUE,
 #' @import cowplot
 #' @export
 plot_karyo_annotated<-function(res_table, plot_path, annot_dt=NULL, 
-                               title_karyo="",dice_tree_path = NULL,mt_subclone_data = NULL){
+                               title_karyo="",dice_tree_path = NULL){
 
   #Reformat somy dataframe
   res_table<-as.data.table(res_table)
@@ -91,16 +91,12 @@ plot_karyo_annotated<-function(res_table, plot_path, annot_dt=NULL,
                                     levels = dice_tree$tip.label)
 
   if (!is.null(annot_dt)) {
-      # Load annotation data
-      annot_dt <- fread(annot_dt)
-      
-      # Reorder annotations based on DICE tree tip labels
-      annot_dt$Cell <- factor(annot_dt$Cell, levels = dice_tree$tip.label)
+      annot_dt$cell <- factor(as.character(annot_dt$cell),
+                              levels = dice_tree$tip.label)
     }
   } else {
     stop("DICE tree path must be provided to replace the original hierarchical clustering.")
   }
-
 
   somycolours <- c(`0-somy` = "darkorchid3",
                   `1-somy` = "springgreen2",
@@ -121,7 +117,7 @@ plot_karyo_annotated<-function(res_table, plot_path, annot_dt=NULL,
           axis.text.y = element_blank())
 
 # Create annotation heatmap (if provided)
-  if (!is.null(annot_csv)) {
+  if (!is.null(annot_dt)) {
     ggannot <- ggplot(annot_dt, aes(x=1, y=Cell, fill=ActiveIdent)) +
                geom_tile() +
                coord_flip() +
@@ -131,21 +127,37 @@ plot_karyo_annotated<-function(res_table, plot_path, annot_dt=NULL,
                      axis.text.y=element_blank(),
                      legend.position="right",
                      plot.title=element_text(size=18))
-  }
-
-  # Combine plots: DICE tree, karyogram, and annotations
-  if (!is.null(annot_csv)) {
-    combiplot <- cowplot::plot_grid(ggtree_plot, ggsomy,
-                                    ggannot,
+    
+    # Extract legend for annotation heatmap
+    gglegend <- cowplot::get_legend(ggannot)
+    
+    # Remove legend from main annotation plot
+    ggannot <- ggannot +
+               theme(axis.title.y=element_blank(),
+                     axis.ticks=element_blank(),
+                     axis.text=element_blank(),
+                     legend.position="none")
+    
+    # Combine plots: DICE tree, karyogram, and annotations
+    combiplot <- cowplot::plot_grid(ggtree_plot, ggsomy, ggannot,
                                     ncol=3,
                                     rel_widths=c(0.3,1,0.2), 
-                                    axis='b', align='h')
-    ggsave(plot_path, combiplot, width=50, height=20, units="in")
+                                    axis='b', align='hw')
+    
+    # Add legend below combined plot
+    combiplot <- cowplot::plot_grid(combiplot, gglegend,
+                                    ncol=1,
+                                    rel_heights=c(1,0.05))
+    
+    ggsave(plot_path, combiplot, width=42, height=20, units="in")
+    
   } else {
+    # Combine only DICE tree and karyogram if no annotations are provided
     combiplot <- cowplot::plot_grid(ggtree_plot, ggsomy,
                                     ncol=2,
                                     rel_widths=c(0.3,1), 
                                     axis='b', align='h')
+    
     ggsave(plot_path, combiplot, width=40, height=20, units="in")
   }
 }
