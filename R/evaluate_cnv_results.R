@@ -62,44 +62,41 @@ split_subclones<-function(res_table,tree_depth,plot_tree=TRUE,
 #' @import ggdendro
 #' @import cowplot
 #' @export
-plot_karyo_annotated<-function(res_table, plot_path, annot_dt=NULL, 
-                               title_karyo="",dice_tree_path = NULL){
-
-  #Reformat somy dataframe
-  res_table<-as.data.table(res_table)
-  somies.dt <- res_table[,-c("start","end")]
-  somies.dt$rn <- 1:nrow(somies.dt)
-  somies_melted <- melt(somies.dt, id.vars=c('rn','seq'))
-  somies_melted$value <- as.factor(paste0(somies_melted$value,'-somy'))
+plot_karyo_annotated <- function(res_table, plot_path, annot_dt = NULL, 
+                                 title_karyo = "", dice_tree_path = NULL) {
   
-  #Sort the karyogram chromosomes correctly (assuming that the order in res_table is correct)
-  somies_melted$seq<-factor(somies_melted$seq,levels=unique(res_table$seq))
+  # Reformat somy dataframe
+  res_table <- as.data.table(res_table)
+  somies.dt <- res_table[, -c("start", "end")]
+  somies.dt$rn <- 1:nrow(somies.dt)
+  somies_melted <- melt(somies.dt, id.vars = c('rn', 'seq'))
+  somies_melted$value <- as.factor(paste0(somies_melted$value, '-somy'))
+  
+  # Sort the karyogram chromosomes correctly
+  somies_melted$seq <- factor(somies_melted$seq, levels = unique(res_table$seq))
   
   # Load and plot DICE phylogenetic tree
   if (!is.null(dice_tree_path)) {
     library(ape)
     library(ggtree)
-
-  # Read the DICE tree from the Newick file
+    
+    # Read the DICE tree from the Newick file
     dice_tree <- read.tree(dice_tree_path)
     ggtree_plot <- ggtree(dice_tree) + 
-                  theme_tree() +
-                  labs(title="Phylogenetic Tree from DICE") 
-
-  # Reorder cells in karyogram based on DICE tree tip labels
+                   theme_tree() +
+                   labs(title="Phylogenetic Tree from DICE")
+    
+    # Reorder cells in karyogram based on DICE tree tip labels
     somies_melted$variable <- factor(somies_melted$variable,
-                                    levels = dice_tree$tip.label)
-
-  if (!is.null(annot_csv)) {
-      # Load annotation data
-      annot_dt <- fread(annot_csv)
-      
-      # Dynamically map columns to standard names
-      colnames(annot_dt) <- tolower(colnames(annot_dt))  #all columns to lowercase
+                                     levels = dice_tree$tip.label)
+    
+    if (!is.null(annot_dt)) {
+      # Dynamically map columns to standard names if necessary
+      colnames(annot_dt) <- tolower(colnames(annot_dt))  # Convert all column names to lowercase
       if ("cell" %in% colnames(annot_dt) && length(colnames(annot_dt)) == 2) {
         setnames(annot_dt, old = c("cell", colnames(annot_dt)[2]), new = c("Cell", "annotation"))
       } else {
-        stop("Error: Annotation file must contain a 'cell' column and one additional annotation column.")
+        stop("Error: Annotation data must contain a 'cell' column and one additional annotation column.")
       }
       
       # Reorder annotations based on DICE tree tip labels
@@ -109,27 +106,28 @@ plot_karyo_annotated<-function(res_table, plot_path, annot_dt=NULL,
   } else {
     stop("DICE tree path must be provided to replace the original hierarchical clustering.")
   }
-
+  
+  # Define somy colors
   somycolours <- c(`0-somy` = "darkorchid3",
                   `1-somy` = "springgreen2",
                   `2-somy` = "red3")
-
-  # Create the karyogram heatmap
-  ggsomy <- ggplot(somies_melted, aes(x=rn, y=variable, fill=value)) + 
+  
+  # Create karyogram heatmap
+  ggsomy <- ggplot(somies_melted, aes(x = rn, y = variable, fill = value)) + 
     geom_tile() +
-    facet_grid(cols=vars(seq), scales = 'free_x', space = 'free') +
-    labs(x="Position in chromosome", fill='Somy', title = title_karyo) +
-    scale_fill_manual(values=somycolours) +
+    facet_grid(cols = vars(seq), scales = 'free_x', space = 'free') +
+    labs(x = "Position in chromosome", fill = 'Somy', title = title_karyo) +
+    scale_fill_manual(values = somycolours) +
     theme(axis.ticks.x = element_blank(),
           axis.text.x = element_blank(),
           legend.position = 'none',
           plot.title = element_text(size=18),
-          strip.text.x = element_text(size = 12),
-          axis.title.y = element_blank(),
-          axis.text.y = element_blank())
-
-# Create annotation heatmap (if provided)
-  if (!is.null(annot_csv)) {
+          strip.text.x = element_text(size=12),
+          axis.title.y=element_blank(),
+          axis.text.y=element_blank())
+  
+  # Create annotation heatmap (if provided)
+  if (!is.null(annot_dt)) {
     ggannot <- ggplot(annot_dt, aes(x=1, y=Cell, fill=annotation)) +
               geom_tile() +
               coord_flip() +
@@ -139,6 +137,7 @@ plot_karyo_annotated<-function(res_table, plot_path, annot_dt=NULL,
                     axis.text.y=element_blank(),
                     legend.position="right",
                     plot.title=element_text(size=18))
+    
     # Extract legend for annotation heatmap
     gglegend <- cowplot::get_legend(ggannot)
     
