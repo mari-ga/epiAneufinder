@@ -90,8 +90,20 @@ plot_karyo_annotated<-function(res_table, plot_path, annot_dt=NULL,
     somies_melted$variable <- factor(somies_melted$variable,
                                     levels = dice_tree$tip.label)
 
-  if (!is.null(annot_dt)) {
-      annot_dt$cell <- factor(as.character(annot_dt$cell),
+  if (!is.null(annot_csv)) {
+      # Load annotation data
+      annot_dt <- fread(annot_csv)
+      
+      # Dynamically map columns to standard names
+      colnames(annot_dt) <- tolower(colnames(annot_dt))  #all columns to lowercase
+      if ("cell" %in% colnames(annot_dt) && length(colnames(annot_dt)) == 2) {
+        setnames(annot_dt, old = c("cell", colnames(annot_dt)[2]), new = c("Cell", "annotation"))
+      } else {
+        stop("Error: Annotation file must contain a 'cell' column and one additional annotation column.")
+      }
+      
+      # Reorder annotations based on DICE tree tip labels
+      annot_dt$Cell <- factor(as.character(annot_dt$Cell),
                               levels = dice_tree$tip.label)
     }
   } else {
@@ -117,26 +129,25 @@ plot_karyo_annotated<-function(res_table, plot_path, annot_dt=NULL,
           axis.text.y = element_blank())
 
 # Create annotation heatmap (if provided)
-  if (!is.null(annot_dt)) {
-    ggannot <- ggplot(annot_dt, aes(x=1, y=Cell, fill=ActiveIdent)) +
-               geom_tile() +
-               coord_flip() +
-               labs(title="", fill="Annotation") +
-               theme(axis.title.y=element_blank(),
-                     axis.ticks.y=element_blank(),
-                     axis.text.y=element_blank(),
-                     legend.position="right",
-                     plot.title=element_text(size=18))
-    
+  if (!is.null(annot_csv)) {
+    ggannot <- ggplot(annot_dt, aes(x=1, y=Cell, fill=annotation)) +
+              geom_tile() +
+              coord_flip() +
+              labs(title="", fill="Annotation") +
+              theme(axis.title.y=element_blank(),
+                    axis.ticks.y=element_blank(),
+                    axis.text.y=element_blank(),
+                    legend.position="right",
+                    plot.title=element_text(size=18))
     # Extract legend for annotation heatmap
     gglegend <- cowplot::get_legend(ggannot)
     
     # Remove legend from main annotation plot
     ggannot <- ggannot +
-               theme(axis.title.y=element_blank(),
-                     axis.ticks=element_blank(),
-                     axis.text=element_blank(),
-                     legend.position="none")
+              theme(axis.title.y=element_blank(),
+                    axis.ticks=element_blank(),
+                    axis.text=element_blank(),
+                    legend.position="none")
     
     # Combine plots: DICE tree, karyogram, and annotations
     combiplot <- cowplot::plot_grid(ggtree_plot, ggsomy, ggannot,
