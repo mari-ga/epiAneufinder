@@ -98,7 +98,10 @@ plot_karyo_annotated <- function(res_table, plot_path, annot_dt = NULL,
       
       # Dynamically map columns to standard names
       colnames(annot_dt) <- c("cell", "annot")
-      
+
+      # Convert numeric annotations to factors for categorical mapping
+      annot_dt$annot <- as.factor(annot_dt$annot)
+
       # Reorder annotations based on DICE tree tip labels
       annot_dt$cell <- factor(as.character(annot_dt$cell),
                               levels = dice_tree$tip.label)
@@ -129,12 +132,13 @@ plot_karyo_annotated <- function(res_table, plot_path, annot_dt = NULL,
   if (!is.null(annot_dt)) {
     annot_dt$type <- "Annotation"
     
-    # Create annotation heatmap
+    # Create annotation heatmap with dynamic color palette
     ggannot <- ggplot(annot_dt, aes(x=cell, y=1, fill=annot)) +
               geom_tile() +
               coord_flip() +
               facet_grid(~type, scales='free', space='free') +
               labs(title="", fill="Annotation") +
+              scale_fill_manual(values=annotation_colors) + 
               theme(legend.title=element_text(size=16),
                     legend.text=element_text(size=16),
                     plot.title=element_text(size=18)) +
