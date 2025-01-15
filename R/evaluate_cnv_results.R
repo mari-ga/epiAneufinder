@@ -105,6 +105,12 @@ plot_karyo_annotated <- function(res_table, plot_path, annot_dt = NULL,
       # Reorder annotations based on DICE tree tip labels
       annot_dt$cell <- factor(as.character(annot_dt$cell),
                               levels = dice_tree$tip.label)
+
+     # Generate a dynamic color palette for annotations
+      unique_annotations <- levels(annot_dt$annot)
+      num_categories <- length(unique_annotations)
+      annotation_colors <- scales::hue_pal()(num_categories)
+      names(annotation_colors) <- unique_annotations                         
     }
   } else {
     stop("DICE tree path must be provided to replace the original hierarchical clustering.")
