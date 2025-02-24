@@ -62,7 +62,7 @@ split_subclones<-function(res_table,tree_depth,plot_tree=TRUE,
 #' @import ggdendro
 #' @import cowplot
 #' @export
-plot_karyo_annotated <- function(res_table, plot_path, seurat_object_path, annot_dt = NULL, 
+plot_karyo_annotated <- function(res_table, plot_path, seurat_object_path = NULL, annot_dt = NULL, 
                                  title_karyo = "", dice_tree_path = NULL) {
 
   # Reformat somy dataframe
@@ -80,6 +80,7 @@ plot_karyo_annotated <- function(res_table, plot_path, seurat_object_path, annot
     library(ape)
     library(ggtree)
     library(viridis)
+    library(Seurat)
 
     # Read the DICE tree from the Newick file
     dice_tree <- read.tree(dice_tree_path)
@@ -98,6 +99,10 @@ plot_karyo_annotated <- function(res_table, plot_path, seurat_object_path, annot
       allele_data <- GetAssayData(object = seurat_object, assay = "alleles", slot = "data")
       # Reorder allele data columns based on DICE tree tip labels (barcodes)
       ordered_barcodes <- dice_tree$tip.label
+      # Ensure barcodes in DICE match those in Seurat object
+      if (!all(ordered_barcodes %in% colnames(allele_data))) {
+        stop("Barcodes in DICE tree do not match those in the 'alleles' assay.")
+      }
       allele_data <- allele_data[, ordered_barcodes]
 
       # Melt allele data for ggplot2
