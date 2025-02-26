@@ -97,7 +97,7 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
       
       allele_data_long <- melt(allele_data, id.vars = "V1", variable.name = "Barcode", value.name = "Frequency")
       setnames(allele_data_long, "V1", "SNP") 
-
+      print(allele_data_long)
       # Reorder allele data columns based on DICE tree tip labels (barcodes)
       ordered_barcodes <- dice_tree$tip.label
 
@@ -110,13 +110,17 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
       allele_data_long$Barcode <- factor(allele_data_long$Barcode, levels = ordered_barcodes)
 
       # Create SNP heatmap
-      snp_heatmap <- ggplot(allele_data_long, aes(x = Barcode, y = SNP, fill = Frequency)) +
+      snp_heatmap <- ggplot(allele_data_long, aes(x = SNP, y = Barcode, fill = Frequency)) +
         geom_tile() +
-        scale_fill_viridis(option = "cividis", name = "Allele Frequency") +
+        scale_fill_viridis(option = "plasma", name = "Allele Frequency") +
         labs(x = "Cells (Barcodes)", y = "SNPs", title = "SNP Profile") +
         theme_minimal() +
-        theme(axis.text.x = element_blank(),
-              axis.ticks.x = element_blank())
+              theme(axis.text.y = element_blank(), 
+              axis.ticks.y = element_blank(),
+              axis.text.x = element_text(angle = 45, hjust = 1),
+              axis.title.x = element_text(size=14),
+              axis.title.y = element_blank(),
+              plot.title = element_text(size=16))
 
     } else if (!is.null(annot_dt)) {
       # Reverse back code - in case no Seurat object is provided
