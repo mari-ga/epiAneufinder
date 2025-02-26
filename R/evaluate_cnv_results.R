@@ -95,35 +95,29 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
       # Load SNP data from alleles assay
       allele_data <- fread(snp_csv_path, header = TRUE)
       
-      # Ensure row names (SNPs) are properly set
-      rownames(allele_data) <- allele_data[[1]]
-      allele_data <- allele_data[, -1, with = FALSE]
-      print(head(allele_data))
-      print("--------")
+      allele_data_long <- melt(allele_data, id.vars = "V1", variable.name = "Barcode", value.name = "Frequency")
+      setnames(allele_data_long, "V1", "SNP") 
+
       # Reorder allele data columns based on DICE tree tip labels (barcodes)
       ordered_barcodes <- dice_tree$tip.label
-      print("dice barcodes")
-      print(ordered_barcodes)
-      print("--------")
-      # Ensure barcodes in DICE match those in SNP data
-      if (!all(ordered_barcodes %in% colnames(allele_data))) {
+
+      # Ensure all barcodes in DICE match those in SNP data
+      if (!all(ordered_barcodes %in% unique(allele_data_long$Barcode))) {
         stop("Barcodes in DICE tree do not match those in the SNP data.")
       }
 
-      allele_data <- allele_data[, ..ordered_barcodes]
-      print(head(allele_data))
-      allele_data_dt <- as.data.table(as.matrix(allele_data), keep.rownames = "SNP")
-      allele_data_melted <- melt(allele_data_dt, id.vars = "SNP", variable.name = "Barcode", value.name = "Frequency")
+      allele_data_long <- allele_data_long[Barcode %in% ordered_barcodes]
+      allele_data_long$Barcode <- factor(allele_data_long$Barcode, levels = ordered_barcodes)
 
       # Create SNP heatmap
-      snp_heatmap <- ggplot(allele_data_melted, aes(x = Barcode, y = SNP, fill = Frequency)) +
+      snp_heatmap <- ggplot(allele_data_long, aes(x = Barcode, y = SNP, fill = Frequency)) +
         geom_tile() +
         scale_fill_viridis(option = "cividis", name = "Allele Frequency") +
         labs(x = "Cells (Barcodes)", y = "SNPs", title = "SNP Profile") +
         theme_minimal() +
         theme(axis.text.x = element_blank(),
               axis.ticks.x = element_blank())
-      
+
     } else if (!is.null(annot_dt)) {
       # Reverse back code - in case no Seurat object is provided
       # Check if annot_dt is a data frame with at least two columns
