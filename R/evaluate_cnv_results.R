@@ -62,7 +62,7 @@ split_subclones<-function(res_table,tree_depth,plot_tree=TRUE,
 #' @import ggdendro
 #' @import cowplot
 #' @export
-plot_karyo_annotated <- function(res_table, plot_path, seurat_object_path = NULL, annot_dt = NULL, 
+plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, annot_dt = NULL, 
                                  title_karyo = "", dice_tree_path = NULL) {
 
   # Reformat somy dataframe
@@ -80,7 +80,6 @@ plot_karyo_annotated <- function(res_table, plot_path, seurat_object_path = NULL
     library(ape)
     library(ggtree)
     library(viridis)
-    library(Seurat)
 
     # Read the DICE tree from the Newick file
     dice_tree <- read.tree(dice_tree_path)
@@ -92,20 +91,24 @@ plot_karyo_annotated <- function(res_table, plot_path, seurat_object_path = NULL
     somies_melted$variable <- factor(somies_melted$variable,
                                     levels = dice_tree$tip.label)
 
-    if (!is.null(seurat_object_path)) {
-      # Load Seurat object from RDS file
-      seurat_object <- readRDS(seurat_object_path)
-      # Extract allele data from Seurat object
-      allele_data <- GetAssayData(object = seurat_object, assay = "alleles", slot = "data")
+    if (!is.null(snp_csv_path)) {
+      # Load SNP data from alleles assay
+      allele_data <- fread(snp_csv_path, header = TRUE)
+      
+      # Ensure row names (SNPs) are properly set
+      rownames(allele_data) <- allele_data[[1]]
+      allele_data <- allele_data[, -1, with = FALSE]
+      
       # Reorder allele data columns based on DICE tree tip labels (barcodes)
       ordered_barcodes <- dice_tree$tip.label
-      # Ensure barcodes in DICE match those in Seurat object
+      
+      # Ensure barcodes in DICE match those in SNP data
       if (!all(ordered_barcodes %in% colnames(allele_data))) {
-        stop("Barcodes in DICE tree do not match those in the 'alleles' assay.")
+        stop("Barcodes in DICE tree do not match those in the SNP data.")
       }
-      allele_data <- allele_data[, ordered_barcodes]
 
-      # Melt allele data for ggplot2
+      allele_data <- allele_data[, ..ordered_barcodes]
+
       allele_data_dt <- as.data.table(as.matrix(allele_data), keep.rownames = "SNP")
       allele_data_melted <- melt(allele_data_dt, id.vars = "SNP", variable.name = "Barcode", value.name = "Frequency")
 
@@ -117,7 +120,7 @@ plot_karyo_annotated <- function(res_table, plot_path, seurat_object_path = NULL
         theme_minimal() +
         theme(axis.text.x = element_blank(),
               axis.ticks.x = element_blank())
-
+      
     } else if (!is.null(annot_dt)) {
       # Reverse back code - in case no Seurat object is provided
       # Check if annot_dt is a data frame with at least two columns
