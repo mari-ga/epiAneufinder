@@ -191,18 +191,13 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
 
     if (!is.null(snp_csv_path)) {
       # Combine DICE tree, karyogram, and rotated SNP heatmap with alignment fixes
-      combiplot <- cowplot::plot_grid(
+       combiplot <- cowplot::plot_grid(
         ggtree_plot,
-        cowplot::plot_grid(
-          ggsomy,
-          snp_heatmap,
-          ncol=1,
-          align='v',
-          rel_heights=c(1, 1)
-        ),
-        ncol=2,
-        rel_widths=c(0.2, 0.8),
-        align='h'
+        ggsomy,
+        snp_heatmap,
+        ncol=3,
+        rel_widths=c(0.2, 0.4, 0.4),  # Adjust width ratios for better alignment
+        align='hv'
       )
     } else {
       # Combine DICE tree and karyogram with annotations
