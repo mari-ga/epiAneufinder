@@ -94,22 +94,44 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
     if (!is.null(snp_csv_path)) {
       # Load SNP data from alleles assay
       allele_data <- fread(snp_csv_path, header = TRUE)
+
+      # Ensure the frequency col is numeric
+      allele_data[, (2:ncol(allele_data)) := lapply(.SD, as.numeric), .SDcols = 2:ncol(allele_data)]
       
       allele_data_long <- melt(allele_data, id.vars = "V1", variable.name = "Barcode", value.name = "Frequency")
       setnames(allele_data_long, "V1", "SNP") 
-      print(allele_data_long)
-      print("------------")
+
       # Reorder allele data columns based on DICE tree tip labels (barcodes)
       ordered_barcodes <- dice_tree$tip.label
       print(length(ordered_barcodes))
+
       # Ensure all barcodes in DICE match those in SNP data
       if (!all(ordered_barcodes %in% unique(allele_data_long$Barcode))) {
         stop("Barcodes in DICE tree do not match those in the SNP data.")
       }
 
+      ###### debugging
+      # Calculate the number of unique barcodes before filtering
+      barcodes_before_filtering <- unique(allele_data_long$Barcode)
+      num_barcodes_before <- length(barcodes_before_filtering)
+      #######
+
       allele_data_long <- allele_data_long[Barcode %in% ordered_barcodes]
+
+
+      # Calculate the number of unique barcodes after filtering
+      barcodes_after_filtering <- unique(allele_data_long$Barcode)
+      num_barcodes_after <- length(barcodes_after_filtering)
+
+      num_barcodes_deleted <- num_barcodes_before - num_barcodes_after
+      print(paste("Number of barcodes before filtering:", num_barcodes_before))
+      print(paste("Number of barcodes after filtering:", num_barcodes_after))
+      print(paste("Number of barcodes deleted by filtering:", num_barcodes_deleted))
+
       allele_data_long$Barcode <- factor(allele_data_long$Barcode, levels = ordered_barcodes)
-      print(length(allele_data_long$Barcode))
+
+
+
       # Create SNP heatmap
       snp_heatmap <- ggplot(allele_data_long, aes(x = SNP, y = Barcode, fill = Frequency)) +
         geom_tile() +
@@ -217,7 +239,7 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
     }
 
     # Save combined plot
-    ggsave(plot_path, combiplot, width=50, height=20, units="in") 
+    ggsave(plot_path, combiplot, width=50, height=20, units="in",limitsize = FALSE)
 
   } else {
     stop("DICE tree path must be provided to replace the original hierarchical clustering.")
