@@ -97,11 +97,11 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
       
       allele_data_long <- melt(allele_data, id.vars = "V1", variable.name = "Barcode", value.name = "Frequency")
       setnames(allele_data_long, "V1", "SNP") 
-      print(head(allele_data_long))
+      print(allele_data_long)
       print("------------")
       # Reorder allele data columns based on DICE tree tip labels (barcodes)
       ordered_barcodes <- dice_tree$tip.label
-
+      pirnt(length(ordered_barcodes))
       # Ensure all barcodes in DICE match those in SNP data
       if (!all(ordered_barcodes %in% unique(allele_data_long$Barcode))) {
         stop("Barcodes in DICE tree do not match those in the SNP data.")
@@ -115,15 +115,15 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
         geom_tile() +
         scale_fill_viridis(option = "plasma", name = "Allele Frequency") +
         labs(x = "SNPs", y = NULL, title = "SNP Profile") +
-        theme_minimal() +
-              theme(axis.text.y = element_blank(), 
+        theme(axis.text.y = element_blank(),
               axis.ticks.y = element_blank(),
               axis.text.x = element_text(angle = 45, hjust = 1),
               axis.title.x = element_text(size=14),
               axis.title.y = element_blank(),
               plot.title = element_text(size=16),
-              panel.spacing.x=unit(0, "lines"),  
-              panel.spacing.y=unit(0, "lines"))
+              panel.spacing.x=unit(0, "lines"),
+              panel.spacing.y=unit(0, "lines"),
+              plot.margin=margin(0,0,0,0))
 
     } else if (!is.null(annot_dt)) {
       # Reverse back code - in case no Seurat object is provided
@@ -187,11 +187,12 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
             plot.title = element_text(size=18),
             strip.text.x = element_text(size=12),
             axis.title.y=element_blank(),
-            axis.text.y=element_blank())
+            axis.text.y=element_blank(),
+            panel.spacing.x=unit(0.1, "lines"))
 
     if (!is.null(snp_csv_path)) {
       # Combine DICE tree, karyogram, and rotated SNP heatmap with alignment fixes
-       combiplot <- cowplot::plot_grid(
+      combiplot <- cowplot::plot_grid(
         ggtree_plot,
         ggsomy,
         snp_heatmap,
@@ -216,7 +217,7 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
     }
 
     # Save combined plot
-    ggsave(plot_path, combiplot, width=40, height=20, units="in") 
+    ggsave(plot_path, combiplot, width=50, height=20, units="in") 
 
   } else {
     stop("DICE tree path must be provided to replace the original hierarchical clustering.")
