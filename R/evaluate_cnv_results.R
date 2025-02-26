@@ -63,7 +63,7 @@ split_subclones<-function(res_table,tree_depth,plot_tree=TRUE,
 #' @import cowplot
 #' @export
 plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, annot_dt = NULL, 
-                                 title_karyo = "", dice_tree_path = NULL) {
+                                title_karyo = "", dice_tree_path = NULL) {
 
   # Reformat somy dataframe
   res_table <- as.data.table(res_table)
@@ -182,7 +182,7 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
             axis.title.y=element_blank(),
             axis.text.y=element_blank())
 
-    if (!is.null(seurat_object_path)) {
+    if (!is.null(snp_csv_path)) {
       # Combine DICE tree, karyogram, and SNP heatmap
       combiplot <- cowplot::plot_grid(
         ggtree_plot,
