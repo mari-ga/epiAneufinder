@@ -98,7 +98,8 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
       # Ensure row names (SNPs) are properly set
       rownames(allele_data) <- allele_data[[1]]
       allele_data <- allele_data[, -1, with = FALSE]
-      
+      print(allele_data)
+      print("--------")
       # Reorder allele data columns based on DICE tree tip labels (barcodes)
       ordered_barcodes <- dice_tree$tip.label
       
