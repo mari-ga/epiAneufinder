@@ -98,18 +98,20 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
       # Ensure row names (SNPs) are properly set
       rownames(allele_data) <- allele_data[[1]]
       allele_data <- allele_data[, -1, with = FALSE]
-      print(allele_data)
+      print(head(allele_data))
       print("--------")
       # Reorder allele data columns based on DICE tree tip labels (barcodes)
       ordered_barcodes <- dice_tree$tip.label
-      
+      print("dice barcodes")
+      print(ordered_barcodes)
+      print("--------")
       # Ensure barcodes in DICE match those in SNP data
       if (!all(ordered_barcodes %in% colnames(allele_data))) {
         stop("Barcodes in DICE tree do not match those in the SNP data.")
       }
 
       allele_data <- allele_data[, ..ordered_barcodes]
-
+      print(head(allele_data))
       allele_data_dt <- as.data.table(as.matrix(allele_data), keep.rownames = "SNP")
       allele_data_melted <- melt(allele_data_dt, id.vars = "SNP", variable.name = "Barcode", value.name = "Frequency")
 
