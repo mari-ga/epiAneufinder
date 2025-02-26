@@ -101,7 +101,7 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
       print("------------")
       # Reorder allele data columns based on DICE tree tip labels (barcodes)
       ordered_barcodes <- dice_tree$tip.label
-      pirnt(length(ordered_barcodes))
+      print(length(ordered_barcodes))
       # Ensure all barcodes in DICE match those in SNP data
       if (!all(ordered_barcodes %in% unique(allele_data_long$Barcode))) {
         stop("Barcodes in DICE tree do not match those in the SNP data.")
