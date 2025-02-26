@@ -139,13 +139,21 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
         labs(x = "SNPs", y = NULL, title = "SNP Profile") +
         theme(axis.text.y = element_blank(),
               axis.ticks.y = element_blank(),
-              axis.text.x = element_text(angle = 45, hjust = 1),
-              axis.title.x = element_text(size=14),
+              axis.text.x = element_blank(),
               axis.title.y = element_blank(),
               plot.title = element_text(size=16),
               panel.spacing.x=unit(0, "lines"),
               panel.spacing.y=unit(0, "lines"),
-              plot.margin=margin(0,0,0,0))
+              plot.margin=margin(0,0,0,0)) +
+              geom_text(
+              data = unique(allele_data_long[, .(SNP)]), 
+              aes(x = SNP, y = Inf, label = SNP), 
+              inherit.aes = FALSE,
+              angle = 0,
+              hjust = 0.5,
+              vjust = -1,
+              size = 3
+            )
 
     } else if (!is.null(annot_dt)) {
       # Reverse back code - in case no Seurat object is provided
