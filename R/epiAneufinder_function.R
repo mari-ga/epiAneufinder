@@ -184,27 +184,29 @@ epiAneufinder <- function(input, outdir, blacklist, windowSize, genome="BSgenome
       as.integer(round(x * correction))
     }, mc.cores = ncores), .SDcols = patterns("cell-")]
     saveRDS(corrected_counts, file.path(outdir,"counts_gc_corrected.rds"))
-  
+
   } 
-  
+
   # ----------------------------------------------------------------------------
   # Estimating breakpoints
   # ----------------------------------------------------------------------------
-  
+
   corrected_counts <- readRDS(file.path(outdir,"counts_gc_corrected.rds"))
   peaks <- cbind(rowinfo, corrected_counts)
-  
+  saveRDS(peaks, file.path(outdir,"peaks_breakpoints.rds"))
   if(!file.exists(file.path(outdir,"results_gc_corrected.rds"))) {
-    
+
     message("Calculating distance AD")
-    
+
     clusters_ad <- peaks[, mclapply(.SD, function(x) {
       peaksperchrom <- split(x, peaks$seqnames)
       results <- lapply(peaksperchrom, function(x2) {
-        getbp(x2, k = k, minsize = minsize, test=test,minsizeCNV=minsizeCNV)
+        getbp(x2, k = k,minsize = minsize, test = test, minsizeCNV = minsizeCNV)
       })
       return(results)
     }, mc.cores = ncores), .SDcols = patterns("cell-")]
+    print("Clusters AD from breakpoint estimation:")
+    print(clusters_ad)
     saveRDS(clusters_ad, file.path(outdir, "results_gc_corrected.rds"))
   }
   message("Successfully identified breakpoints")
