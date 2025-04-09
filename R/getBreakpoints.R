@@ -26,7 +26,8 @@ getbp <- function(seq_data, minsize=1, k=3, test='AD', minsizeCNV=5){
     #Identify the positions with the maximal distance within each segment
     bp_per_seq <- sapply(dist_vect, function(x) { which.max(x)*minsize })
   
-    bp_per_seq[which(bp_per_seq > sapply(seq_k_data, length))] <- sapply(seq_k_data, length)[which(bp_per_seq > sapply(seq_k_data, length))]
+    bp_per_seq[which(bp_per_seq > sapply(seq_k_data, length))] <- 
+      sapply(seq_k_data, length)[which(bp_per_seq > sapply(seq_k_data, length))]
     
     bp_neighbors <-  as.vector(sapply(bp, function(x){seq(x-minsizeCNV,x+minsizeCNV)}))
     # bp_per_seq[((bp_per_seq+add_to_bp) %in% bp_neighbors)] <- NA
@@ -44,11 +45,9 @@ getbp <- function(seq_data, minsize=1, k=3, test='AD', minsizeCNV=5){
     }
   }
   
-  
   if (minsizeCNV!=0){
       bp_ends <- c(1:minsizeCNV, seq(length(seq_data)-minsizeCNV, length(seq_data)))
-     }
-     else{
+     } else{
       bp_ends = c(1, length(seq_data))
      }
   distbp <- distbp[!(bp %in% bp_ends)]

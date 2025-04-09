@@ -57,7 +57,7 @@ The filtering options are dependent on the input file type. In case, a fragment 
 
 **Note of caution** We compared the results of CNV calling with the peak matrix compared to fragment file as input. We used the SNU601 dataset as in the publication and compared with the scWGS dataset as groundtruth. The correlation between the CNVs is worse when using the matrix as input (0.74 from 0.85). We loose reads that are not in peak regions so overall we get less coverage over the genome. The result is that we can miss some gains and losses that would otherwise have been identified with the fragment input. So we would suggest a bit of caution in the interpretation of the results, but the comparison with the groundtruth the method still gives valid results.
 
-### Other parameters
+### Parameters
 
 The example is run on the genome hg38, but any other genome available at BSgenome can be used correspondingly, after installing the matching bioconductor package. Corresponding to the genome version, the correct `blacklist` file need to be provided to the function and the corrected naming of the excluded chromosomes (variable `exclude`).
 

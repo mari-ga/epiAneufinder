@@ -18,11 +18,14 @@ epiAneufinder(
   title_karyo = NULL,
   minFrags = 20000,
   mapqFilter = 10,
+  threshold_cells_nbins = 0.05,
+  selected_cells = NULL,
   threshold_blacklist_bins = 0.85,
   ncores = 4,
   minsize = 1,
-  k = 3,
-  minsizeCNV = 5,
+  k = 4,
+  minsizeCNV = 0,
+  save_removed_regions = FALSE,
   plotKaryo = TRUE
 )
 }
@@ -54,6 +57,10 @@ a count matrix (required files: matrix.mtx(.gz), barcodes.tsv(.gz) and peaks.bed
 
 \item{mapqFilter}{Filter bam files after a certain mapq value}
 
+\item{threshold_cells_nbins}{Keep only cells that have more than a certain percentage of non-zero bins}
+
+\item{selected_cells}{Additional option for filtering the input, either NULL or a file with barcodes of cells to keep (one barcode per line, no header)}
+
 \item{threshold_blacklist_bins}{Blacklist a bin if more than the given ratio of cells have zero reads in the bin. Default: 0.85}
 
 \item{ncores}{Number of cores for parallelization. Default: 4}
@@ -63,6 +70,8 @@ a count matrix (required files: matrix.mtx(.gz), barcodes.tsv(.gz) and peaks.bed
 \item{k}{Integer. Find 2^k segments per chromosome}
 
 \item{minsizeCNV}{Integer. Number of consecutive bins to constitute a possible CNV}
+
+\item{save_removed_regions}{Option to save regions that were filtered out in a file removed_regions.tsv.}
 
 \item{plotKaryo}{Boolean variable. Whether the final karyogram is plotted at the end}
 }
