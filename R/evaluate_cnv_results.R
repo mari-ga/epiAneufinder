@@ -61,6 +61,9 @@ split_subclones<-function(res_table,tree_depth,plot_tree=TRUE,
 #' @import ggplot2
 #' @import ggdendro
 #' @import cowplot
+#' @import ape
+#' @import ggtree
+#' @import viridis
 #' @export
 plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, annot_dt = NULL, 
                                 title_karyo = "", dice_tree_path = NULL) {
@@ -77,9 +80,9 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
 
   # Load and plot DICE phylogenetic tree
   if (!is.null(dice_tree_path)) {
-    library(ape)
-    library(ggtree)
-    library(viridis)
+    #library(ape)
+    #library(ggtree)
+    #library(viridis)
 
     # Read the DICE tree from the Newick file
     dice_tree <- read.tree(dice_tree_path)
@@ -89,17 +92,20 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
 
     # Reorder cells in karyogram based on DICE tree tip labels
     somies_melted$variable <- factor(somies_melted$variable,
-                                    levels = dice_tree$tip.label)
+                                      levels = dice_tree$tip.label)
 
     if (!is.null(snp_csv_path)) {
       # Load SNP data from alleles assay
       allele_data <- fread(snp_csv_path, header = TRUE)
 
       # Ensure the frequency col is numeric
-      allele_data[, (2:ncol(allele_data)) := lapply(.SD, as.numeric), .SDcols = 2:ncol(allele_data)]
-      
-      allele_data_long <- melt(allele_data, id.vars = "V1", variable.name = "Barcode", value.name = "Frequency")
-      setnames(allele_data_long, "V1", "SNP") 
+      allele_data[, (2:ncol(allele_data)) :=
+                    lapply(.SD, as.numeric), .SDcols = 2:ncol(allele_data)]
+
+      allele_data_long <- melt(allele_data,
+                              id.vars = "V1", variable.name = "Barcode",
+                              value.name = "Frequency")
+      setnames(allele_data_long, "V1", "SNP")
 
       # Reorder allele data columns based on DICE tree tip labels (barcodes)
       ordered_barcodes <- dice_tree$tip.label
@@ -109,31 +115,24 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
       if (!all(ordered_barcodes %in% unique(allele_data_long$Barcode))) {
         stop("Barcodes in DICE tree do not match those in the SNP data.")
       }
-
       ###### debugging
       # Calculate the number of unique barcodes before filtering
       barcodes_before_filtering <- unique(allele_data_long$Barcode)
       num_barcodes_before <- length(barcodes_before_filtering)
       #######
-
       allele_data_long <- allele_data_long[Barcode %in% ordered_barcodes]
-
-
       # Calculate the number of unique barcodes after filtering
       barcodes_after_filtering <- unique(allele_data_long$Barcode)
       num_barcodes_after <- length(barcodes_after_filtering)
-
       num_barcodes_deleted <- num_barcodes_before - num_barcodes_after
       print(paste("Number of barcodes before filtering:", num_barcodes_before))
       print(paste("Number of barcodes after filtering:", num_barcodes_after))
       print(paste("Number of barcodes deleted by filtering:", num_barcodes_deleted))
-
-      allele_data_long$Barcode <- factor(allele_data_long$Barcode, levels = ordered_barcodes)
-
-
-
+      allele_data_long$Barcode <- factor(allele_data_long$Barcode,
+                                          levels = ordered_barcodes)
       # Create SNP heatmap
-      snp_heatmap <- ggplot(allele_data_long, aes(x = SNP, y = Barcode, fill = Frequency)) +
+      snp_heatmap <- ggplot(allele_data_long,
+                            aes(x = SNP, y = Barcode, fill = Frequency)) +
         geom_tile() +
         scale_fill_viridis(option = "plasma", name = "Allele Frequency") +
         labs(x = "SNPs", y = NULL, title = "SNP Profile") +
@@ -145,41 +144,35 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
               panel.spacing.x=unit(0, "lines"),
               panel.spacing.y=unit(0, "lines"),
               plot.margin=margin(0,0,0,0)) +
-              geom_text(
-              data = unique(allele_data_long[, .(SNP)]), 
-              aes(x = SNP, y = Inf, label = SNP), 
-              inherit.aes = FALSE,
-              angle = 0,
-              hjust = 0.5,
-              vjust = -1,
-              size = 3
-            )
-
+        geom_text(
+          data = unique(allele_data_long[, .(SNP)]), 
+          aes(x = SNP, y = Inf, label = SNP), 
+          inherit.aes = FALSE,
+          angle = 0,
+          hjust = 0.5,
+          vjust = -1,
+          size = 3
+        )
     } else if (!is.null(annot_dt)) {
       # Reverse back code - in case no Seurat object is provided
       # Check if annot_dt is a data frame with at least two columns
       if (!is.data.frame(annot_dt) || ncol(annot_dt) < 2) {
-        stop("Error: Annotation data must be a data frame with at least two columns.")
+        stop("Error: Annotation data must be a
+              data frame with at least two columns.")
       }
-
       # Dynamically map columns to standard names
       colnames(annot_dt) <- c("cell", "annot")
-
       # Convert numeric annotations to factors for categorical mapping
       annot_dt$annot <- as.factor(annot_dt$annot)
-
       # Reorder annotations based on DICE tree tip labels
       annot_dt$cell <- factor(as.character(annot_dt$cell),
                               levels = dice_tree$tip.label)
-
     # Generate a dynamic color palette for annotations
       unique_annotations <- levels(annot_dt$annot)
       num_categories <- length(unique_annotations)
       annotation_colors <- scales::hue_pal()(num_categories)
       names(annotation_colors) <- unique_annotations
-
       annot_dt$type <- "Annotation"
-
       ggannot <- ggplot(annot_dt, aes(x=cell, y=1, fill=annot)) +
         geom_tile() +
         coord_flip() +
@@ -190,9 +183,7 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
               legend.text=element_text(size=16),
               plot.title=element_text(size=18)) +
         guides(fill=guide_legend(nrow=1, byrow=TRUE))
-
       gglegend <- cowplot::get_legend(ggannot)
-
       ggannot <- ggannot +
         ylab("") +
         theme(axis.title.y=element_blank(),
@@ -200,12 +191,11 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
               axis.text=element_blank(),
               legend.position="none")
     }
-  # Define somy colors
-  somycolours <- c(`0-somy` = "darkorchid3",
+    # Define somy colors
+    somycolours <- c(`0-somy` = "darkorchid3",
                   `1-somy` = "springgreen2",
                   `2-somy` = "red3")
-
-# Create karyogram heatmap
+    # Create karyogram heatmap
     ggsomy <- ggplot(somies_melted, aes(x = rn, y = variable, fill = value)) + 
       geom_tile() +
       facet_grid(cols = vars(seq), scales = 'free_x', space = 'free') +
@@ -221,7 +211,8 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
             panel.spacing.x=unit(0.1, "lines"))
 
     if (!is.null(snp_csv_path)) {
-      # Combine DICE tree, karyogram, and rotated SNP heatmap with alignment fixes
+      # Combine DICE tree, karyogram,
+      # and rotated SNP heatmap with alignment fixes
       combiplot <- cowplot::plot_grid(
         ggtree_plot,
         ggsomy,
@@ -245,12 +236,12 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
                                       ncol=1,
                                       rel_heights=c(1,0.05))
     }
-
     # Save combined plot
-    ggsave(plot_path, combiplot, width=50, height=20, units="in",limitsize = FALSE)
-
+    ggsave(plot_path, combiplot, width=50,
+            height=20, units="in",limitsize = FALSE)
   } else {
-    stop("DICE tree path must be provided to replace the original hierarchical clustering.")
+    stop("DICE tree path must be provided to 
+        replace the original hierarchical clustering.")
   }
 }
 
@@ -309,14 +300,14 @@ plot_single_cell_profile<-function(outdir,threshold_blacklist_bins=0.85,
     plot.dt <- peaks[, .(chr=seqnames, counts=get(i1))]
     plot.dt$somy <- paste0(somies_ad[[i1]], '-somy')
     plot.dt <- plot.dt[which(plot.dt$counts < quantile(plot.dt$counts, 0.999) &
-                               plot.dt$counts > quantile(plot.dt$counts, 0.01))]
+                              plot.dt$counts > quantile(plot.dt$counts, 0.01))]
     plot.dt$rn <- as.numeric(rownames(plot.dt))
     plot.dt$chr <- gsub("chr","", plot.dt$chr)
     plot.dt$chr <- factor(plot.dt$chr, levels = c(1:22))
     titletext <- paste0(i1, " : Library size - ", sum(plot.dt$counts))
     somycolours <- c(`0-somy` = "darkorchid3",
-                     `1-somy` = "springgreen2",
-                     `2-somy` = "red3")
+                    `1-somy` = "springgreen2",
+                    `2-somy` = "red3")
                                       
     numwindows <- as.data.frame(table(plot.dt$somy))
     colnames(numwindows) <- c("State", "Number of bins")
