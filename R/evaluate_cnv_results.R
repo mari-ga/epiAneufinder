@@ -80,9 +80,9 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
 
   # Load and plot DICE phylogenetic tree
   if (!is.null(dice_tree_path)) {
-    #library(ape)
-    #library(ggtree)
-    #library(viridis)
+    library(ape)
+    library(ggtree)
+    library(viridis)
 
     # Read the DICE tree from the Newick file
     dice_tree <- read.tree(dice_tree_path)
