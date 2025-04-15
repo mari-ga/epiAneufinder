@@ -206,8 +206,6 @@ epiAneufinder <- function(input, outdir, blacklist, windowSize, genome="BSgenome
       return(results)
     }, mc.cores = ncores), .SDcols = patterns("cell-")]
     print("Clusters AD from breakpoint estimation:")
-    print(clusters_ad)
-    saveRDS(clusters_ad, file.path(outdir, "results_gc_corrected.rds"))
   }
   message("Successfully identified breakpoints")
 
@@ -281,7 +279,7 @@ epiAneufinder <- function(input, outdir, blacklist, windowSize, genome="BSgenome
     return(x)
     }))
   write_somies.dt <- as.data.table(cbind(seq=peaks$seqnames, start=peaks$start, 
-                                         end=peaks$end, write_somies.dt))
+                                        end=peaks$end, write_somies.dt))
   write.table(write_somies.dt, file = file.path(outdir, "results_table.tsv"), quote = FALSE)
   message("A .tsv file with the results has been written to disk. 
           It contains the copy number states for each cell per bin.
