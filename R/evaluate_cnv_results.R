@@ -68,7 +68,7 @@ split_subclones<-function(res_table,tree_depth,plot_tree=TRUE,
 plot_karyo_annotated <- function(res_table, plot_path,
                                   snp_csv_path = NULL, annot_dt = NULL, 
                                   title_karyo = "", 
-                                  dice_tree_path = NULL, tool_name = "DICE") {
+                                  tree_path = NULL, tool_name = "DICE") {
 
   # Reformat somy dataframe
   res_table <- as.data.table(res_table)
@@ -81,20 +81,20 @@ plot_karyo_annotated <- function(res_table, plot_path,
   somies_melted$seq <- factor(somies_melted$seq, levels = unique(res_table$seq))
 
   # Load and plot phylogenetic tree
-  if (!is.null(dice_tree_path)) {
+  if (!is.null(tree_path)) {
     library(ape)
     library(ggtree)
     library(viridis)
 
-    # Read the DICE tree from the Newick file
-    dice_tree <- read.tree(dice_tree_path)
-    ggtree_plot <- ggtree(dice_tree) +
+    # Read the phylogenetic tree from the Newick file
+    phylogenetic_tree <- read.tree(tree_path)
+    ggtree_plot <- ggtree(phylogenetic_tree) +
       theme_tree() +
-      labs(title=paste0(tool_name, "Phylogenetic Tree"))
+      labs(title=paste0(tool_name, " Phylogenetic Tree"))
 
-    # Reorder cells in karyogram based on DICE tree tip labels
+    # Reorder cells in karyogram based on tree tip labels
     somies_melted$variable <- factor(somies_melted$variable,
-                                      levels = dice_tree$tip.label)
+                                      levels = phylogenetic_tree$tip.label)
 
     if (!is.null(snp_csv_path)) {
       # Load SNP data from alleles assay
@@ -109,13 +109,13 @@ plot_karyo_annotated <- function(res_table, plot_path,
                               value.name = "Frequency")
       setnames(allele_data_long, "V1", "SNP")
 
-      # Reorder allele data columns based on DICE tree tip labels (barcodes)
-      ordered_barcodes <- dice_tree$tip.label
+      # Reorder allele data columns based on tree tip labels (barcodes)
+      ordered_barcodes <- phylogenetic_tree$tip.label
       print(length(ordered_barcodes))
 
-      # Ensure all barcodes in DICE match those in SNP data
+      # Ensure all barcodes in the tree match those in SNP data
       if (!all(ordered_barcodes %in% unique(allele_data_long$Barcode))) {
-        stop("Barcodes in DICE tree do not match those in the SNP data.")
+        stop("Barcodes in tree do not match those in the SNP data.")
       }
       ###### debugging
       # Calculate the number of unique barcodes before filtering
@@ -165,7 +165,7 @@ plot_karyo_annotated <- function(res_table, plot_path,
       annot_dt$annot <- as.factor(annot_dt$annot)
       # Reorder annotations based on DICE tree tip labels
       annot_dt$cell <- factor(as.character(annot_dt$cell),
-                              levels = dice_tree$tip.label)
+                              levels = phylogenetic_tree$tip.label)
     # Generate a dynamic color palette for annotations
       unique_annotations <- levels(annot_dt$annot)
       num_categories <- length(unique_annotations)
@@ -191,9 +191,9 @@ plot_karyo_annotated <- function(res_table, plot_path,
               legend.position="none")
     }
     # Define somy colors
-    somycolours <- c(`0-somy` = "darkorchid3",
-                  `1-somy` = "springgreen2",
-                  `2-somy` = "red3")
+    somycolours <- c(`0-somy` = "darkblue",
+                  `1-somy` = "lightgreen",
+                  `2-somy` = "darkred")
     # Create karyogram heatmap
     ggsomy <- ggplot(somies_melted, aes(x = rn, y = variable, fill = value)) + 
       geom_tile() +
