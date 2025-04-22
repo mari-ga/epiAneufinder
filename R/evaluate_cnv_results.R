@@ -65,8 +65,10 @@ split_subclones<-function(res_table,tree_depth,plot_tree=TRUE,
 #' @import ggtree
 #' @import viridis
 #' @export
-plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, annot_dt = NULL, 
-                                title_karyo = "", dice_tree_path = NULL) {
+plot_karyo_annotated <- function(res_table, plot_path,
+                                  snp_csv_path = NULL, annot_dt = NULL, 
+                                  title_karyo = "", 
+                                  dice_tree_path = NULL, tool_name = "DICE") {
 
   # Reformat somy dataframe
   res_table <- as.data.table(res_table)
@@ -78,7 +80,7 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
   # Sort the karyogram chromosomes correctly
   somies_melted$seq <- factor(somies_melted$seq, levels = unique(res_table$seq))
 
-  # Load and plot DICE phylogenetic tree
+  # Load and plot phylogenetic tree
   if (!is.null(dice_tree_path)) {
     library(ape)
     library(ggtree)
@@ -86,9 +88,9 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
 
     # Read the DICE tree from the Newick file
     dice_tree <- read.tree(dice_tree_path)
-    ggtree_plot <- ggtree(dice_tree) + 
-                  theme_tree() +
-                  labs(title="DICE Phylogenetic Tree")
+    ggtree_plot <- ggtree(dice_tree) +
+      theme_tree() +
+      labs(title=paste0(tool_name, "Phylogenetic Tree"))
 
     # Reorder cells in karyogram based on DICE tree tip labels
     somies_melted$variable <- factor(somies_melted$variable,
@@ -125,9 +127,6 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
       barcodes_after_filtering <- unique(allele_data_long$Barcode)
       num_barcodes_after <- length(barcodes_after_filtering)
       num_barcodes_deleted <- num_barcodes_before - num_barcodes_after
-      print(paste("Number of barcodes before filtering:", num_barcodes_before))
-      print(paste("Number of barcodes after filtering:", num_barcodes_after))
-      print(paste("Number of barcodes deleted by filtering:", num_barcodes_deleted))
       allele_data_long$Barcode <- factor(allele_data_long$Barcode,
                                           levels = ordered_barcodes)
       # Create SNP heatmap
@@ -240,7 +239,7 @@ plot_karyo_annotated <- function(res_table, plot_path, snp_csv_path = NULL, anno
     ggsave(plot_path, combiplot, width=50,
             height=20, units="in",limitsize = FALSE)
   } else {
-    stop("DICE tree path must be provided to 
+    stop("Tree path must be provided to 
         replace the original hierarchical clustering.")
   }
 }

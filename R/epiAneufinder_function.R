@@ -184,28 +184,28 @@ epiAneufinder <- function(input, outdir, blacklist, windowSize, genome="BSgenome
       as.integer(round(x * correction))
     }, mc.cores = ncores), .SDcols = patterns("cell-")]
     saveRDS(corrected_counts, file.path(outdir,"counts_gc_corrected.rds"))
-
+  
   } 
-
+  
   # ----------------------------------------------------------------------------
   # Estimating breakpoints
   # ----------------------------------------------------------------------------
-
+  
   corrected_counts <- readRDS(file.path(outdir,"counts_gc_corrected.rds"))
   peaks <- cbind(rowinfo, corrected_counts)
-  saveRDS(peaks, file.path(outdir,"peaks_breakpoints.rds"))
+  
   if(!file.exists(file.path(outdir,"results_gc_corrected.rds"))) {
-
+    
     message("Calculating distance AD")
-
+    
     clusters_ad <- peaks[, mclapply(.SD, function(x) {
       peaksperchrom <- split(x, peaks$seqnames)
       results <- lapply(peaksperchrom, function(x2) {
-        getbp(x2, k = k,minsize = minsize, test = test, minsizeCNV = minsizeCNV)
+        getbp(x2, k = k, minsize = minsize, test=test,minsizeCNV=minsizeCNV)
       })
       return(results)
     }, mc.cores = ncores), .SDcols = patterns("cell-")]
-    print("Clusters AD from breakpoint estimation:")
+    saveRDS(clusters_ad, file.path(outdir, "results_gc_corrected.rds"))
   }
   message("Successfully identified breakpoints")
 
@@ -279,7 +279,7 @@ epiAneufinder <- function(input, outdir, blacklist, windowSize, genome="BSgenome
     return(x)
     }))
   write_somies.dt <- as.data.table(cbind(seq=peaks$seqnames, start=peaks$start, 
-                                        end=peaks$end, write_somies.dt))
+                                         end=peaks$end, write_somies.dt))
   write.table(write_somies.dt, file = file.path(outdir, "results_table.tsv"), quote = FALSE)
   message("A .tsv file with the results has been written to disk. 
           It contains the copy number states for each cell per bin.
