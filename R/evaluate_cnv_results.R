@@ -15,33 +15,33 @@
 #' @import cowplot
 #' @import gridExtra
 #' @export
-split_subclones<-function(res_table,tree_depth,plot_tree=TRUE,
-                          plot_path="dendogram_clustering.pdf",
-                          plot_width=4,
-                          plot_height=3){
-  
+split_subclones <- function(res_table, tree_depth, plot_tree = TRUE,
+                            plot_path = "dendogram_clustering.pdf",
+                            plot_width = 4,
+                            plot_height = 3){
+
   #Reformat result table
-  res_table<-as.data.table(res_table)
-  somies.dt <- res_table[,-c("start","end")]
+  res_table <- as.data.table(res_table)
+  somies.dt <- res_table[, -c("start", "end")]
   somies.dt$rn <- 1:nrow(somies.dt)
   #Extract all cell columns (column starts with cell- or cell.)
-  counts_t <- t(somies.dt[ ,.SD, .SDcols=patterns('cell.')])
-  
+  counts_t <- t(somies.dt[,.SD, .SDcols = patterns("cell.")])
+
   #Calculate hierarchical clustering
   dist_matrix <- dist(counts_t)
   dist_matrix[is.na(dist_matrix)] <- 0
   hc_counts <- hclust(dist_matrix, method = "ward.D")
-  
+
   #Split at a certain depth
-  cl_members<-cutree(hc_counts,k=tree_depth)
-  cl_members_df<-data.frame(cell=names(cl_members),
-                            subclone=cl_members)
-    
+  cl_members <- cutree(hc_counts,k = tree_depth)
+  cl_members_df <- data.frame(cell = names(cl_members),
+                            subclone = cl_members)
+
   #Create a plot of the subclones
-  if(plot_tree){
+  if(plot_tree) {
     pdf(plot_path, width = plot_width, height = plot_height)
-    plot(x = hc_counts,labels= FALSE,hang=-1) 
-    rect.hclust(tree = hc_counts, k = tree_depth,border=1:tree_depth)
+    plot(x = hc_counts, labels = FALSE, hang = -1) 
+    rect.hclust(tree = hc_counts, k = tree_depth, border = 1:tree_depth)
     dev.off()
   }
 
@@ -66,16 +66,16 @@ split_subclones<-function(res_table,tree_depth,plot_tree=TRUE,
 #' @import viridis
 #' @export
 plot_karyo_annotated <- function(res_table, plot_path,
-                                  snp_csv_path = NULL, annot_dt = NULL, 
-                                  title_karyo = "", 
-                                  tree_path = NULL, tool_name = "DICE") {
+                                 snp_csv_path = NULL, annot_dt = NULL,
+                                 title_karyo = "",
+                                 tree_path = NULL, tool_name = "DICE") {
 
   # Reformat somy dataframe
   res_table <- as.data.table(res_table)
   somies.dt <- res_table[, -c("start", "end")]
   somies.dt$rn <- 1:nrow(somies.dt)
-  somies_melted <- melt(somies.dt, id.vars = c('rn', 'seq'))
-  somies_melted$value <- as.factor(paste0(somies_melted$value, '-somy'))
+  somies_melted <- melt(somies.dt, id.vars <- c("rn", "seq"))
+  somies_melted$value <- as.factor(paste0(somies_melted$value, "-somy"))
 
   # Sort the karyogram chromosomes correctly
   somies_melted$seq <- factor(somies_melted$seq, levels = unique(res_table$seq))
@@ -94,7 +94,7 @@ plot_karyo_annotated <- function(res_table, plot_path,
 
     # Reorder cells in karyogram based on tree tip labels
     somies_melted$variable <- factor(somies_melted$variable,
-                                      levels = phylogenetic_tree$tip.label)
+                                     levels = phylogenetic_tree$tip.label)
 
     if (!is.null(snp_csv_path)) {
       # Load SNP data from alleles assay
@@ -105,8 +105,8 @@ plot_karyo_annotated <- function(res_table, plot_path,
                     lapply(.SD, as.numeric), .SDcols = 2:ncol(allele_data)]
 
       allele_data_long <- melt(allele_data,
-                              id.vars = "V1", variable.name = "Barcode",
-                              value.name = "Frequency")
+                               id.vars = "V1", variable.name = "Barcode",
+                               value.name = "Frequency")
       setnames(allele_data_long, "V1", "SNP")
 
       # Reorder allele data columns based on tree tip labels (barcodes)
@@ -140,9 +140,9 @@ plot_karyo_annotated <- function(res_table, plot_path,
               axis.text.x = element_blank(),
               axis.title.y = element_blank(),
               plot.title = element_text(size=16),
-              panel.spacing.x=unit(0, "lines"),
-              panel.spacing.y=unit(0, "lines"),
-              plot.margin=margin(0,0,0,0)) +
+              panel.spacing.x = unit(0, "lines"),
+              panel.spacing.y = unit(0, "lines"),
+              plot.margin = margin(0, 0, 0, 0)) +
         geom_text(
           data = unique(allele_data_long[, .(SNP)]), 
           aes(x = SNP, y = Inf, label = SNP), 
@@ -166,7 +166,7 @@ plot_karyo_annotated <- function(res_table, plot_path,
       # Reorder annotations based on DICE tree tip labels
       annot_dt$cell <- factor(as.character(annot_dt$cell),
                               levels = phylogenetic_tree$tip.label)
-    # Generate a dynamic color palette for annotations
+      # Generate a dynamic color palette for annotations
       unique_annotations <- levels(annot_dt$annot)
       num_categories <- length(unique_annotations)
       annotation_colors <- scales::hue_pal()(num_categories)
@@ -192,8 +192,8 @@ plot_karyo_annotated <- function(res_table, plot_path,
     }
     # Define somy colors
     somycolours <- c(`0-somy` = "darkblue",
-                  `1-somy` = "lightgreen",
-                  `2-somy` = "darkred")
+                     `1-somy` = "lightgreen",
+                     `2-somy` = "darkred")
     # Create karyogram heatmap
     ggsomy <- ggplot(somies_melted, aes(x = rn, y = variable, fill = value)) + 
       geom_tile() +
@@ -216,9 +216,9 @@ plot_karyo_annotated <- function(res_table, plot_path,
         ggtree_plot,
         ggsomy,
         snp_heatmap,
-        ncol=3,
-        rel_widths=c(0.2, 0.4, 0.4),  # Adjust width ratios for better alignment
-        align='hv'
+        ncol = 3,
+        rel_widths = c(0.2, 0.4, 0.4),  # Adjust width ratios for better alignment
+        align = "hv"
       )
     } else {
       # Combine DICE tree and karyogram with annotations
@@ -239,8 +239,33 @@ plot_karyo_annotated <- function(res_table, plot_path,
     ggsave(plot_path, combiplot, width=50,
             height=20, units="in",limitsize = FALSE)
   } else {
-    stop("Tree path must be provided to 
-        replace the original hierarchical clustering.")
+
+    # Fallback to hierarchical clustering if tree_path is not provided
+    message("No tree provided, using hierarchical clustering.")
+
+    # Reformat the somy table
+    res_table <- as.data.table(res_table)
+    somies.dt <- res_table[, -c("start", "end")]
+    somies.dt$rn <- 1:nrow(somies.dt)
+    counts_t <- t(somies.dt[, .SD, .SDcols = patterns("cell.")])
+    
+    # Compute distance and hierarchical clustering
+    dist_matrix <- dist(counts_t)
+    dist_matrix[is.na(dist_matrix)] <- 0
+    hc <- hclust(dist_matrix, method = "ward.D")
+    
+    # Extract ordering
+    ordered_cells <- hc$labels[hc$order]
+
+    # Update order in melted data
+    somies_melted$variable <- factor(somies_melted$variable, levels = ordered_cells)
+
+    # Optional: generate a dendrogram
+    dendro_data <- ggdendro::dendro_data(hc)
+    ggtree_plot <- ggplot(ggdendro::segment(dendro_data)) +
+      geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
+      theme_minimal() +
+      labs(title = paste0(tool_name, " Hierarchical Clustering"))
   }
 }
 
